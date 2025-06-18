@@ -31,6 +31,10 @@ import pacman.game.Constants.MOVE;
 import pacman.game.Game;
 import pacman.game.GameView;
 
+// AI Pacman Imort
+import pacman.AI.AIDebugWindow;
+import pacman.AI.AStarPacMan;
+
 import static pacman.game.Constants.*;
 
 /**
@@ -72,7 +76,7 @@ public class Executor {
 		boolean visual = true;
 
 		// Pacman AI Runtime
-		exec.runGameTimed(new MyPacMan(), new MyGhosts(), visual);
+		exec.runGameTimed(new AStarPacMan(), new MyGhosts(), visual);
 
 		// RunTime against other Ghosts
 		// exec.runGameTimed(new MyPacMan(), new RandomGhosts(), visual); // tegen
