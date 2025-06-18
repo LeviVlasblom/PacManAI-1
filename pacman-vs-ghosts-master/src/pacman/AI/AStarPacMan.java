@@ -89,9 +89,13 @@ public class AStarPacMan extends Controller<MOVE> {
         } else {
             AIDebugWindow.getInstance().log("Chasing edible ghost at: " + target);
         }
+        if (target != null && game.getShortestPathDistance(current, target) < 3 && isGhostThreatening(game, 20)) {
+            AIDebugWindow.getInstance().log("Aborting risky short path to " + target);
+            return MOVE.NEUTRAL;
+        }
 
         // If no target available (e.g. no pills or ghosts), return NEUTRAL
-        if (target == null) {
+        if (target == null || target == -1) {
             AIDebugWindow.getInstance().log("No target found. Returning NEUTRAL.");
             return MOVE.NEUTRAL;
         }
@@ -184,11 +188,39 @@ public class AStarPacMan extends Controller<MOVE> {
                     System.out.println("Adding neighbor: " + neighbor + " with g: " + tentativeG + " and f: " + f);
                     openSet.add(new NodeRecord(neighbor, tentativeG, f));
                 }
+
             }
         }
 
         // If goal was never reached, return null
         return null;
+    }
+
+    /**
+     * Calculates an extra cost for being near any non-edible, moving ghost.
+     */
+    private int getGhostProximityPenalty(Game game, int nodeIndex) {
+        final int DANGER_RADIUS = 10; // How far around the node to check for ghosts
+        final int PENALTY_SCALE = 20; // Base penalty multiplier
+
+        int penalty = 0;
+
+        for (GHOST ghost : GHOST.values()) {
+            int ghostIndex = game.getGhostCurrentNodeIndex(ghost);
+
+            // Skip if ghost is not present or edible or in lair
+            if (ghostIndex == -1 || game.isGhostEdible(ghost) || game.getGhostLairTime(ghost) > 0)
+                continue;
+
+            int distance = game.getShortestPathDistance(nodeIndex, ghostIndex);
+
+            // Apply penalty if ghost is close
+            if (distance >= 0 && distance <= DANGER_RADIUS) {
+                penalty += (DANGER_RADIUS - distance) * PENALTY_SCALE;
+            }
+        }
+
+        return penalty;
     }
 
     // Represents a node in the A* search with cost-so-far (g) and total cost
@@ -208,7 +240,12 @@ public class AStarPacMan extends Controller<MOVE> {
     // Returns the heuristic cost from node 'from' to node 'to' using built-in path
     // distance
     private int getHeuristic(Game game, int from, int to) {
-        return game.getShortestPathDistance(from, to);
+        int distance = game.getShortestPathDistance(from, to);
+
+        // Add ghost penalty
+        int ghostPenalty = getGhostProximityPenalty(game, from);
+
+        return distance + ghostPenalty;
     }
 
     /*
