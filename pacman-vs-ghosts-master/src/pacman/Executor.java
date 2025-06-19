@@ -3,6 +3,7 @@ package pacman;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -76,7 +77,9 @@ public class Executor {
 		boolean visual = true;
 
 		// Pacman AI Runtime
-		exec.runGameTimed(new AStarPacMan(), new MyGhosts(), visual);
+		// exec.runGameTimed(new AStarPacMan(), new MyGhosts(), visual);
+
+		exec.runGameTimedRecorded(new AStarPacMan(), new AggressiveGhosts(), visual, "replay.txt");
 
 		// RunTime against other Ghosts
 		// exec.runGameTimed(new MyPacMan(), new RandomGhosts(), visual); // tegen
@@ -296,14 +299,11 @@ public class Executor {
 	public void runGameTimedRecorded(Controller<MOVE> pacManController,
 			Controller<EnumMap<GHOST, MOVE>> ghostController, boolean visual, String fileName) {
 		StringBuilder replay = new StringBuilder();
-
 		Game game = new Game(0);
-
 		GameView gv = null;
 
 		if (visual) {
 			gv = new GameView(game).showGame();
-
 			if (pacManController instanceof HumanController)
 				gv.getFrame().addKeyListener(((HumanController) pacManController).getKeyboardInput());
 		}
@@ -333,6 +333,9 @@ public class Executor {
 		ghostController.terminate();
 
 		saveToFile(replay.toString(), fileName, false);
+
+		// Call onLevelCompleted after the game ends
+		onLevelCompleted(game, pacManController, ghostController);
 	}
 
 	/**
@@ -399,4 +402,41 @@ public class Executor {
 
 		return replay;
 	}
+
+	private void writeResultsToCSV(String aiMethod, String ghostMethod, double totalTime, int totalScore, int level) {
+        String csvFile = "results.csv";
+        try (FileWriter writer = new FileWriter(csvFile, true)) {
+            writer.append(aiMethod)
+                  .append(',')
+                  .append(ghostMethod)
+                  .append(',')
+                  .append(String.valueOf(totalTime))
+                  .append(',')
+                  .append(String.valueOf(totalScore))
+                  .append(',')
+                  .append(String.valueOf(level))
+                  .append('\n');
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void onLevelCompleted(Game game, Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController) {		
+		double totalTime = game.getTotalTime() / 60.0;
+        int totalScore = game.getScore();
+        int level = game.getCurrentLevel() + 1;
+        String aiMethod = pacManController.getClass().getSimpleName();
+        String ghostMethod = ghostController.getClass().getSimpleName();
+
+        // Save results to CSV
+        writeResultsToCSV(aiMethod, ghostMethod, totalTime, totalScore, level);
+
+        // Use the results (example: logging or further processing)
+        System.out.println("Level completed:");
+        System.out.println("AI Method: " + aiMethod);
+        System.out.println("Ghost Method: " + ghostMethod);
+        System.out.println("Time (in seconds): " + totalTime);
+        System.out.println("Score: " + totalScore);
+        System.out.println("Level: " + level);
+    }
 }
