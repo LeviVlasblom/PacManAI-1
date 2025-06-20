@@ -35,6 +35,10 @@ import pacman.game.GameView;
 // AI Pacman Imort
 import pacman.AI.AIDebugWindow;
 import pacman.AI.AStarPacMan;
+import pacman.AI.BFSPacMan;
+import pacman.AI.DFSPacMan;
+import pacman.AI.GreedyPacMan;
+import pacman.AI.UCSPacMan;
 
 import static pacman.game.Constants.*;
 
@@ -79,7 +83,11 @@ public class Executor {
 		// Pacman AI Runtime
 		// exec.runGameTimed(new AStarPacMan(), new MyGhosts(), visual);
 
-		exec.runGameTimedRecorded(new AStarPacMan(), new AggressiveGhosts(), visual, "replay.txt");
+		// exec.runGameTimedRecorded(new DFSPacMan(), new MyGhosts(), visual, "replay.txt");
+		// exec.runGameTimedRecorded(new BFSPacMan(), new MyGhosts(), visual, "replay.txt");
+		// exec.runGameTimedRecorded(new UCSPacMan(), new MyGhosts(), visual, "replay.txt");
+		// exec.runGameTimedRecorded(new GreedyPacMan(), new MyGhosts(), visual, "replay.txt");
+		exec.runGameTimedRecorded(new AStarPacMan(), new MyGhosts(), visual, "replay.txt");
 
 		// RunTime against other Ghosts
 		// exec.runGameTimed(new MyPacMan(), new RandomGhosts(), visual); // tegen
@@ -367,7 +375,6 @@ public class Executor {
 		}
 	}
 
-	// save file for replays
 	public static void saveToFile(String data, String name, boolean append) {
 		try {
 			FileOutputStream outS = new FileOutputStream(name, append);
@@ -382,7 +389,6 @@ public class Executor {
 		}
 	}
 
-	// load a replay
 	private static ArrayList<String> loadReplay(String fileName) {
 		ArrayList<String> replay = new ArrayList<String>();
 
@@ -422,7 +428,8 @@ public class Executor {
     }
 
     private void onLevelCompleted(Game game, Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController) {		
-		double totalTime = game.getTotalTime() / 60.0;
+        double totalTime = game.getTotalTime() / 60.0;
+        totalTime = Math.round(totalTime * 100.0) / 100.0; // round to 2 decimals
         int totalScore = game.getScore();
         int level = game.getCurrentLevel() + 1;
         String aiMethod = pacManController.getClass().getSimpleName();
@@ -431,11 +438,10 @@ public class Executor {
         // Save results to CSV
         writeResultsToCSV(aiMethod, ghostMethod, totalTime, totalScore, level);
 
-        // Use the results (example: logging or further processing)
-        System.out.println("Level completed:");
+        System.out.println("Game Over!");
         System.out.println("AI Method: " + aiMethod);
         System.out.println("Ghost Method: " + ghostMethod);
-        System.out.println("Time (in seconds): " + totalTime);
+        System.out.println("Time: " + totalTime);
         System.out.println("Score: " + totalScore);
         System.out.println("Level: " + level);
     }

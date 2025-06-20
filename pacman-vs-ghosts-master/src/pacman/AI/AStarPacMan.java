@@ -7,66 +7,10 @@ import pacman.game.Game;
 import pacman.game.Constants.DM;
 import pacman.game.Constants.GHOST;
 
-import java.io.Console;
 import java.util.*;
 
 public class AStarPacMan extends Controller<MOVE> {
 
-    /*
-     * use getMove() to get the next move.
-     * This method should return the next move for Pacman based on the current game
-     * state.
-     * It uses A* pathfinding to find the closest pill and returns the move towards
-     * it.
-     */
-    // @Override
-    // public MOVE getMove(Game game, long timeDue) {
-    // // game.getPacmanCurrentNodeIndex() returns the current position of Pacman.
-    // int current = game.getPacmanCurrentNodeIndex();
-    // // game.getActivePillsIndices() returns the indices of all active pills in
-    // the
-    // // game. these are the points!
-    // int[] activePills = game.getActivePillsIndices();
-
-    // // If there are no active pills, return neutral move (do nothing).
-    // if (activePills.length == 0)
-    // return MOVE.NEUTRAL;
-
-    // // Find the closest pill to Pacman using A* pathfinding.
-    // int target = getClosestPill(game, current, activePills);
-    // List<Integer> path = findPathAStar(game, current, target);
-
-    // AIDebugWindow.getInstance().clear();
-    // AIDebugWindow.getInstance().log("Start node: " + current);
-    // AIDebugWindow.getInstance().log("Target node: " + target);
-
-    // // Path not found or too short
-    // if (path == null || path.size() < 2) {
-    // AIDebugWindow.getInstance().log("No valid path found. Returning NEUTRAL.");
-    // return MOVE.NEUTRAL;
-    // }
-
-    // // Log valid path
-    // AIDebugWindow.getInstance().log("Path length: " + path.size());
-    // AIDebugWindow.getInstance().log("Next step: " + path.get(1));
-
-    // StringBuilder sb = new StringBuilder("Full path: ");
-    // for (int node : path) {
-    // sb.append(node).append(" -> ");
-    // }
-    // AIDebugWindow.getInstance().log(sb.toString());
-
-    // // Return move towards second node in the path
-    // return game.getNextMoveTowardsTarget(current, path.get(1), DM.PATH);
-    // }
-
-    /*
-     * use getMove() to get the next move.
-     * This method should return the next move for Pacman based on the current game
-     * state.
-     * It uses A* pathfinding to find the closest pill and returns the move towards
-     * it.
-     */
     @Override
     public MOVE getMove(Game game, long timeDue) {
         int current = game.getPacmanCurrentNodeIndex();

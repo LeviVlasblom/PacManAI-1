@@ -4,3 +4,6 @@ MyPacMan,AggressiveGhosts,2,200,1
 AStarPacMan,AggressiveGhosts,1028,4400,1
 AStarPacMan,AggressiveGhosts,867,2930,1
 AStarPacMan,AggressiveGhosts,87.4,9140,3
+AStarPacMan,MyGhosts,247.4,48210,11
+AStarPacMan,MyGhosts,196.78,27290,8
+AStarPacMan,MyGhosts,215.72,38910,9
