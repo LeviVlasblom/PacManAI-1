@@ -1,6 +1,7 @@
 package pacman;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -9,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Random;
 import pacman.controllers.Controller;
 import pacman.controllers.HumanController;
@@ -35,6 +37,8 @@ import pacman.game.GameView;
 // AI Pacman Imort
 import pacman.AI.AIDebugWindow;
 import pacman.AI.AStarPacMan;
+import pacman.AI.RLPacMan;
+import pacman.AI.RLPacManV2;
 import pacman.AI.BFSPacMan;
 import pacman.AI.DFSPacMan;
 import pacman.AI.GreedyPacMan;
@@ -54,6 +58,9 @@ import static pacman.game.Constants.*;
  */
 @SuppressWarnings("unused")
 public class Executor {
+
+	private int iteration = 0;
+
 	/**
 	 * The main method. Several options are listed - simply remove comments to use
 	 * the option you want.
@@ -91,6 +98,22 @@ public class Executor {
 		//exec.runGameTimedRecorded(new GreedyPacMan(), new MyGhosts(), visual, "replay.txt");
 		//exec.runGameTimedRecorded(new AStarPacMan(), new StarterGhosts(), visual, "replay.txt");
 
+		// --------------------------------------------------------
+		// PacMan AI RL Runtime
+		RLPacManV2 rlPacman = new RLPacManV2(); // Deel deze instantie!
+		// exec.runExperiment(new AStarPacMan(), new MyGhosts(), 100); // increased
+		exec.runExperimentRL(rlPacman, new MyGhosts(), 1000); // increased
+		// exec.runGameTimed(rlPacman, new MyGhosts(), visual);
+
+		rlPacman.saveQTable("qtable.csv");
+		// training games
+
+		// for (int i = 0; i < 500; i++) {
+		// exec.runGameTimed(rlPacman, new MyGhosts(), visual);
+		// rlPacman.saveQTable("qtable.csv"); // Save Q-table after each game
+		// }
+		// System.out.println("Finale Q-table opgeslagen.");
+		// ---------------------------------------------------------
 		// RunTime against other Ghosts
 		// exec.runGameTimed(new MyPacMan(), new RandomGhosts(), visual); // tegen
 		// Randome Gghosts
@@ -142,32 +165,63 @@ public class Executor {
 	public void runExperiment(Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController,
 			int trials) {
 		double avgScore = 0;
-
-		Random rnd = new Random(0);
-		Game game;
+		Game game = new Game(0);
+		int random = new Random().nextInt();
 
 		for (int i = 0; i < trials; i++) {
-			game = new Game(rnd.nextLong());
-
+			game = new Game(random);
 			while (!game.gameOver()) {
-				game.advanceGame(pacManController.getMove(game.copy(), System.currentTimeMillis() + DELAY),
+				game.advanceGame(
+						pacManController.getMove(game.copy(), System.currentTimeMillis() + DELAY),
 						ghostController.getMove(game.copy(), System.currentTimeMillis() + DELAY));
 			}
 
 			avgScore += game.getScore();
-			System.out.println(i + "\t" + game.getScore());
+			System.out.println("Trial " + (i + 1) + ": Score = " + game.getScore());
 
-			// Write results to CSV after each trial
-			double totalTime = game.getTotalTime() / 60.0;
-			totalTime = Math.round(totalTime * 100.0) / 100.0; // round to 2 decimals
-			int totalScore = game.getScore();
-			int level = game.getCurrentLevel() + 1;
-			String aiMethod = pacManController.getClass().getSimpleName();
-			String ghostMethod = ghostController.getClass().getSimpleName();
-			writeResultsToCSV(aiMethod, ghostMethod, totalTime, totalScore, level);
+			onLevelCompletedRL(game, pacManController, ghostController); // Keep this
+
+			System.out.println("Average score over " + trials + " trials: " + (avgScore / trials));
+
+			// Correct: save Q-table once at the end
+			if (pacManController instanceof RLPacManV2 rl) {
+				rl.saveQTable("qtable.csv");
+				System.out.println("Q-table saved to qtable.csv after all training.");
+			}
 		}
 
-		System.out.println(avgScore / trials);
+		onLevelCompletedRL(game, pacManController, ghostController);
+	}
+
+	public void runExperimentRL(Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController,
+			int trials) {
+		double avgScore = 0;
+		Game game = new Game(0);
+		int random = new Random().nextInt();
+
+		for (int i = 0; i < trials; i++) {
+			game = new Game(random);
+			while (!game.gameOver()) {
+				game.advanceGame(
+						pacManController.getMove(game.copy(), System.currentTimeMillis() + DELAY),
+						ghostController.getMove(game.copy(), System.currentTimeMillis() + DELAY));
+			}
+
+			avgScore += game.getScore();
+			System.out.println("Trial " + (i + 1) + ": Score = " + game.getScore());
+
+			onLevelCompletedRL(game, pacManController, ghostController); // Keep this
+
+			System.out.println("Average score over " + trials + " trials: " + (avgScore / trials));
+
+			// Correct: save Q-table once at the end
+			if (pacManController instanceof RLPacManV2 rl) {
+				rl.saveQTable("qtable.csv");
+				System.out.println("Q-table saved to qtable.csv after all training.");
+			}
+		}
+
+		onLevelCompletedRL(game, pacManController, ghostController);
 	}
 
 	/**
@@ -243,6 +297,9 @@ public class Executor {
 			if (visual)
 				gv.repaint();
 		}
+
+		// Call onLevelCompleted after the game ends
+		onLevelCompleted(game, pacManController, ghostController);
 
 		pacManController.terminate();
 		ghostController.terminate();
@@ -421,33 +478,56 @@ public class Executor {
 	}
 
 	private void writeResultsToCSV(String aiMethod, String ghostMethod, double totalTime, int totalScore, int level) {
-        String csvFile = "results.csv";
-        try (FileWriter writer = new FileWriter(csvFile, true)) {
-            writer.append(aiMethod)
-                  .append(',')
-                  .append(ghostMethod)
-                  .append(',')
-                  .append(String.valueOf(totalTime))
-                  .append(',')
-                  .append(String.valueOf(totalScore))
-                  .append(',')
-                  .append(String.valueOf(level))
-                  .append('\n');
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+		String csvFile = "results.csv";
+		try (FileWriter writer = new FileWriter(csvFile, true)) {
+			writer.append(aiMethod)
+					.append(',')
+					.append(ghostMethod)
+					.append(',')
+					.append(String.valueOf(totalTime))
+					.append(',')
+					.append(String.valueOf(totalScore))
+					.append(',')
+					.append(String.valueOf(level))
+					.append('\n');
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
-    private void onLevelCompleted(Game game, Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController) {		
-        double totalTime = game.getTotalTime() / 60.0;
-        totalTime = Math.round(totalTime * 100.0) / 100.0; // round to 2 decimals
-        int totalScore = game.getScore();
-        int level = game.getCurrentLevel() + 1;
-        String aiMethod = pacManController.getClass().getSimpleName();
-        String ghostMethod = ghostController.getClass().getSimpleName();
+	private void writeResultsToCSVRL(int iteration, String aiMethod, String ghostMethod, double totalTime,
+			int totalScore, int level) {
+		String fileName = "RL_Results.csv";
+		File file = new File(fileName);
+		boolean fileExists = file.exists();
+		iteration++; // Increment iteration for each run
 
-        // Save results to CSV
-        writeResultsToCSV(aiMethod, ghostMethod, totalTime, totalScore, level);
+		try (FileWriter writer = new FileWriter(fileName, true)) {
+			if (!fileExists) {
+				// Write header once
+				writer.append("AI Method,Ghost Method,Time (s),Score,Level\n");
+			}
+
+			// Write result row
+			writer.append(String.format(Locale.US, "%s,%s,%s,%.2f,%d,%d\n",
+					iteration, aiMethod, ghostMethod, totalTime, totalScore, level));
+			writer.flush();
+		} catch (IOException e) {
+			System.out.println("Could not write results to CSV!");
+			e.printStackTrace();
+		}
+	}
+
+	private void onLevelCompleted(Game game, Controller<MOVE> pacManController,
+			Controller<EnumMap<GHOST, MOVE>> ghostController) {
+		double totalTime = game.getTotalTime() / 60.0;
+		int totalScore = game.getScore();
+		int level = game.getCurrentLevel() + 1;
+		String aiMethod = pacManController.getClass().getSimpleName();
+		String ghostMethod = ghostController.getClass().getSimpleName();
+
+		// Save results to CSV
+		writeResultsToCSV(aiMethod, ghostMethod, totalTime, totalScore, level);
 
         System.out.println("Game Over!");
         System.out.println("AI Method: " + aiMethod);
