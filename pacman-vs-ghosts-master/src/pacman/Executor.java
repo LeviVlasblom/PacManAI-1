@@ -72,11 +72,11 @@ public class Executor {
 
 		int numTrials = 100; // or any number you want
 
-		exec.runExperiment(new pacman.AI.DFSPacMan(), new MyGhosts(), numTrials);
-		exec.runExperiment(new pacman.AI.BFSPacMan(), new MyGhosts(), numTrials);
-		exec.runExperiment(new pacman.AI.UCSPacMan(), new MyGhosts(), numTrials);
-		exec.runExperiment(new pacman.AI.GreedyPacMan(), new MyGhosts(), numTrials);
-		exec.runExperiment(new pacman.AI.AStarPacMan(), new MyGhosts(), numTrials);
+		// exec.runExperiment(new pacman.AI.DFSPacMan(), new MyGhosts(), numTrials);
+		// exec.runExperiment(new pacman.AI.BFSPacMan(), new MyGhosts(), numTrials);
+		// exec.runExperiment(new pacman.AI.UCSPacMan(), new MyGhosts(), numTrials);
+		// exec.runExperiment(new pacman.AI.GreedyPacMan(), new MyGhosts(), numTrials);
+		// exec.runExperiment(new pacman.AI.AStarPacMan(), new MyGhosts(), numTrials);
 
 		/*
 		 * //run a game in synchronous mode: game waits until controllers respond.
@@ -92,11 +92,16 @@ public class Executor {
 		// Pacman AI Runtime
 		// exec.runGameTimed(new AStarPacMan(), new MyGhosts(), visual);
 
-		//exec.runGameTimedRecorded(new DFSPacMan(), new MyGhosts(), visual, "replay.txt");
-		//exec.runGameTimedRecorded(new BFSPacMan(), new MyGhosts(), visual, "replay.txt");
-		//exec.runGameTimedRecorded(new UCSPacMan(), new MyGhosts(), visual, "replay.txt");
-		//exec.runGameTimedRecorded(new GreedyPacMan(), new MyGhosts(), visual, "replay.txt");
-		//exec.runGameTimedRecorded(new AStarPacMan(), new StarterGhosts(), visual, "replay.txt");
+		// exec.runGameTimedRecorded(new DFSPacMan(), new MyGhosts(), visual,
+		// "replay.txt");
+		// exec.runGameTimedRecorded(new BFSPacMan(), new MyGhosts(), visual,
+		// "replay.txt");
+		// exec.runGameTimedRecorded(new UCSPacMan(), new MyGhosts(), visual,
+		// "replay.txt");
+		// exec.runGameTimedRecorded(new GreedyPacMan(), new MyGhosts(), visual,
+		// "replay.txt");
+		// exec.runGameTimedRecorded(new AStarPacMan(), new StarterGhosts(), visual,
+		// "replay.txt");
 
 		// --------------------------------------------------------
 		// PacMan AI RL Runtime
@@ -179,7 +184,7 @@ public class Executor {
 			avgScore += game.getScore();
 			System.out.println("Trial " + (i + 1) + ": Score = " + game.getScore());
 
-			onLevelCompletedRL(game, pacManController, ghostController); // Keep this
+			onLevelCompleted(game, pacManController, ghostController); // Keep this
 
 			System.out.println("Average score over " + trials + " trials: " + (avgScore / trials));
 
@@ -190,7 +195,7 @@ public class Executor {
 			}
 		}
 
-		onLevelCompletedRL(game, pacManController, ghostController);
+		onLevelCompleted(game, pacManController, ghostController);
 	}
 
 	public void runExperimentRL(Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController,
@@ -529,11 +534,33 @@ public class Executor {
 		// Save results to CSV
 		writeResultsToCSV(aiMethod, ghostMethod, totalTime, totalScore, level);
 
-        System.out.println("Game Over!");
-        System.out.println("AI Method: " + aiMethod);
-        System.out.println("Ghost Method: " + ghostMethod);
-        System.out.println("Time: " + totalTime);
-        System.out.println("Score: " + totalScore);
-        System.out.println("Level: " + level);
-    }
+		System.out.println("Game Over!");
+		System.out.println("AI Method: " + aiMethod);
+		System.out.println("Ghost Method: " + ghostMethod);
+		System.out.println("Time: " + totalTime);
+		System.out.println("Score: " + totalScore);
+		System.out.println("Level: " + level);
+	}
+
+	private void onLevelCompletedRL(Game game, Controller<MOVE> pacManController,
+			Controller<EnumMap<GHOST, MOVE>> ghostController) {
+
+		double totalTime = game.getTotalTime() / 60.0;
+		int totalScore = game.getScore();
+		int level = game.getCurrentLevel() + 1;
+		String aiMethod = pacManController.getClass().getSimpleName();
+		String ghostMethod = ghostController.getClass().getSimpleName();
+
+		iteration++; // increment on every call
+
+		// Save results to CSV
+		writeResultsToCSVRL(iteration, aiMethod, ghostMethod, totalTime, totalScore, level);
+
+		System.out.println("Level completed:");
+		System.out.println("AI Method: " + aiMethod);
+		System.out.println("Ghost Method: " + ghostMethod);
+		System.out.println("Time (in seconds): " + totalTime);
+		System.out.println("Score: " + totalScore);
+		System.out.println("Level: " + level);
+	}
 }
