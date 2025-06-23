@@ -52,32 +52,49 @@ public class UCSPacMan extends Controller<MOVE> {
         queue.add(new Node(start, 0));
         visited.add(start);
 
+        Set<Integer> pillSet = new HashSet<>();
+        for (int pill : pills) pillSet.add(pill);
+
         while (!queue.isEmpty()) {
             Node currentNode = queue.poll();
             int current = currentNode.index;
 
             // Check if the current node is a pill
-            if (Arrays.stream(pills).anyMatch(pill -> pill == current)) {
+            if (pillSet.contains(current)) {
                 List<Integer> path = reconstructPath(cameFrom, current);
                 if (path.size() > 1) {
-                    return path.get(1); // Return the next step towards the pill
+                    return path.get(1);
                 } else {
                     return current;
                 }
             }
 
-            // Explore neighbors
             for (int neighbor : game.getNeighbouringNodes(current)) {
                 if (!visited.contains(neighbor)) {
+                    int penalty = getGhostProximityPenalty(game, neighbor);
+                    int newCost = currentNode.cost + 1 + penalty;
+                    queue.add(new Node(neighbor, newCost));
                     visited.add(neighbor);
-                    queue.add(new Node(neighbor, currentNode.cost + 1));
                     cameFrom.put(neighbor, current);
                 }
             }
         }
-
-        // No path found
         return -1;
+    }
+
+    /**
+     * Adds a cost penalty for being near any non-edible, non-lair ghost.
+     */
+    private int getGhostProximityPenalty(Game game, int nodeIndex) {
+        int penalty = 0;
+        for (GHOST ghost : GHOST.values()) {
+            if (game.getGhostLairTime(ghost) > 0) continue;
+            if (game.isGhostEdible(ghost)) continue;
+            int ghostIndex = game.getGhostCurrentNodeIndex(ghost);
+            int dist = game.getShortestPathDistance(nodeIndex, ghostIndex);
+            if (dist <= 4) penalty += (5 - dist); // Strong penalty for being very close
+        }
+        return penalty;
     }
 
     private static class Node {

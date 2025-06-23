@@ -63,11 +63,13 @@ public class Executor {
 	public static void main(String[] args) {
 		Executor exec = new Executor();
 
-		/*
-		 * //run multiple games in batch mode - good for testing.
-		 * int numTrials=10;
-		 * exec.runExperiment(new RandomPacMan(),new RandomGhosts(),numTrials);
-		 */
+		int numTrials = 100; // or any number you want
+
+		exec.runExperiment(new pacman.AI.DFSPacMan(), new MyGhosts(), numTrials);
+		exec.runExperiment(new pacman.AI.BFSPacMan(), new MyGhosts(), numTrials);
+		exec.runExperiment(new pacman.AI.UCSPacMan(), new MyGhosts(), numTrials);
+		exec.runExperiment(new pacman.AI.GreedyPacMan(), new MyGhosts(), numTrials);
+		exec.runExperiment(new pacman.AI.AStarPacMan(), new MyGhosts(), numTrials);
 
 		/*
 		 * //run a game in synchronous mode: game waits until controllers respond.
@@ -83,11 +85,11 @@ public class Executor {
 		// Pacman AI Runtime
 		// exec.runGameTimed(new AStarPacMan(), new MyGhosts(), visual);
 
-		// exec.runGameTimedRecorded(new DFSPacMan(), new MyGhosts(), visual, "replay.txt");
-		// exec.runGameTimedRecorded(new BFSPacMan(), new MyGhosts(), visual, "replay.txt");
-		// exec.runGameTimedRecorded(new UCSPacMan(), new MyGhosts(), visual, "replay.txt");
-		// exec.runGameTimedRecorded(new GreedyPacMan(), new MyGhosts(), visual, "replay.txt");
-		exec.runGameTimedRecorded(new AStarPacMan(), new MyGhosts(), visual, "replay.txt");
+		//exec.runGameTimedRecorded(new DFSPacMan(), new MyGhosts(), visual, "replay.txt");
+		//exec.runGameTimedRecorded(new BFSPacMan(), new MyGhosts(), visual, "replay.txt");
+		//exec.runGameTimedRecorded(new UCSPacMan(), new MyGhosts(), visual, "replay.txt");
+		//exec.runGameTimedRecorded(new GreedyPacMan(), new MyGhosts(), visual, "replay.txt");
+		//exec.runGameTimedRecorded(new AStarPacMan(), new StarterGhosts(), visual, "replay.txt");
 
 		// RunTime against other Ghosts
 		// exec.runGameTimed(new MyPacMan(), new RandomGhosts(), visual); // tegen
@@ -154,6 +156,15 @@ public class Executor {
 
 			avgScore += game.getScore();
 			System.out.println(i + "\t" + game.getScore());
+
+			// Write results to CSV after each trial
+			double totalTime = game.getTotalTime() / 60.0;
+			totalTime = Math.round(totalTime * 100.0) / 100.0; // round to 2 decimals
+			int totalScore = game.getScore();
+			int level = game.getCurrentLevel() + 1;
+			String aiMethod = pacManController.getClass().getSimpleName();
+			String ghostMethod = ghostController.getClass().getSimpleName();
+			writeResultsToCSV(aiMethod, ghostMethod, totalTime, totalScore, level);
 		}
 
 		System.out.println(avgScore / trials);
