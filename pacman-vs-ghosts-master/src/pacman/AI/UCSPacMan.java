@@ -9,12 +9,17 @@ import java.util.*;
 
 public class UCSPacMan extends Controller<MOVE> {
 
+    /**
+     * Search Method: Uniform Cost Search (UCS)
+     * UCS expands the least-cost node first, guaranteeing the shortest path in graphs with varying edge costs.
+     * Here, UCS is used to find the safest and closest pill for PacMan, considering ghost proximity as extra cost.
+     */
+
     @Override
     public MOVE getMove(Game game, long timeDue) {
         int current = game.getPacmanCurrentNodeIndex();
         int[] activePills = game.getActivePillsIndices();
 
-        // If no pills are available, return NEUTRAL
         if (activePills.length == 0) {
             return MOVE.NEUTRAL;
         }
@@ -24,15 +29,13 @@ public class UCSPacMan extends Controller<MOVE> {
         if (isGhostThreatening(game, 25)) {
             target = getSafestPill(game, current);
         } else {
-            target = getClosestPillUCS(game, current, activePills);
+            target = getClosestPillUCS(game, current, activePills); // <-- UCS search is used here to find the closest pill
         }
 
-        // If no valid target is found, return NEUTRAL
         if (target == -1) {
             return MOVE.NEUTRAL;
         }
 
-        // Return the move towards the target
         return game.getNextMoveTowardsTarget(current, target, pacman.game.Constants.DM.PATH);
     }
 
@@ -126,7 +129,7 @@ public class UCSPacMan extends Controller<MOVE> {
         return path;
     }
 
-    // --- Ghost logic helpers (copied/adapted from AStarPacMan) ---
+    // Ghost logic helpers
 
     private boolean isGhostThreatening(Game game, int ghostDistanceThreshold) {
         int pacman = game.getPacmanCurrentNodeIndex();
@@ -171,3 +174,4 @@ public class UCSPacMan extends Controller<MOVE> {
         return safestPill;
     }
 }
+

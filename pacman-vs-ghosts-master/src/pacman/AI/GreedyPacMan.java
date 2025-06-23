@@ -9,12 +9,17 @@ import java.util.*;
 
 public class GreedyPacMan extends Controller<MOVE> {
 
+    /**
+     * Search Method: Greedy Search
+     * Greedy search always selects the next node that appears closest to the goal (pill), using a heuristic.
+     * This approach is fast but can miss optimal paths. Here, Greedy is used to find the closest pill for PacMan.
+     */
+
     @Override
     public MOVE getMove(Game game, long timeDue) {
         int current = game.getPacmanCurrentNodeIndex();
         int[] activePills = game.getActivePillsIndices();
 
-        // If no pills are available, return NEUTRAL
         if (activePills.length == 0) {
             return MOVE.NEUTRAL;
         }
@@ -24,15 +29,13 @@ public class GreedyPacMan extends Controller<MOVE> {
         if (isGhostThreatening(game, 25)) {
             target = getSafestPill(game, current);
         } else {
-            target = getClosestPillGreedy(game, current, activePills);
+            target = getClosestPillGreedy(game, current, activePills); // <-- Greedy search is used here to find the closest pill
         }
 
-        // If no valid target is found, return NEUTRAL
         if (target == -1) {
             return MOVE.NEUTRAL;
         }
 
-        // Return the move towards the target
         return game.getNextMoveTowardsTarget(current, target, pacman.game.Constants.DM.PATH);
     }
 
@@ -121,7 +124,7 @@ public class GreedyPacMan extends Controller<MOVE> {
         return path;
     }
 
-    // --- Ghost logic helpers (copied/adapted from AStarPacMan) ---
+    // Ghost logic helpers
 
     private boolean isGhostThreatening(Game game, int ghostDistanceThreshold) {
         int pacman = game.getPacmanCurrentNodeIndex();
@@ -166,3 +169,4 @@ public class GreedyPacMan extends Controller<MOVE> {
         return safestPill;
     }
 }
+

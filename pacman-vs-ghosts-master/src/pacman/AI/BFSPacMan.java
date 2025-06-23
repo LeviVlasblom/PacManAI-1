@@ -9,12 +9,17 @@ import java.util.*;
 
 public class BFSPacMan extends Controller<MOVE> {
 
+    /**
+     * Search Method: Breadth-First Search (BFS)
+     * BFS explores all nodes at the current depth before moving deeper, guaranteeing the shortest path in an unweighted graph.
+     * Here, BFS is used to find the closest pill for PacMan.
+     */
+
     @Override
     public MOVE getMove(Game game, long timeDue) {
         int current = game.getPacmanCurrentNodeIndex();
         int[] activePills = game.getActivePillsIndices();
 
-        // If no pills are available, return NEUTRAL
         if (activePills.length == 0) {
             return MOVE.NEUTRAL;
         }
@@ -24,15 +29,13 @@ public class BFSPacMan extends Controller<MOVE> {
         if (isGhostThreatening(game, 25)) {
             target = getSafestPill(game, current);
         } else {
-            target = getClosestPillBFS(game, current, activePills);
+            target = getClosestPillBFS(game, current, activePills); // <-- BFS search is used here to find the closest pill
         }
 
-        // If no valid target is found, return NEUTRAL
         if (target == -1) {
             return MOVE.NEUTRAL;
         }
 
-        // Return the move towards the target
         return game.getNextMoveTowardsTarget(current, target, pacman.game.Constants.DM.PATH);
     }
 
@@ -98,7 +101,7 @@ public class BFSPacMan extends Controller<MOVE> {
         return path;
     }
 
-    // --- Ghost logic helpers (copied/adapted from AStarPacMan) ---
+    // Ghost logic helpers
 
     private boolean isGhostThreatening(Game game, int ghostDistanceThreshold) {
         int pacman = game.getPacmanCurrentNodeIndex();
@@ -143,3 +146,4 @@ public class BFSPacMan extends Controller<MOVE> {
         return safestPill;
     }
 }
+
