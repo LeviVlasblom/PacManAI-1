@@ -38,6 +38,7 @@ import pacman.game.GameView;
 import pacman.AI.AIDebugWindow;
 import pacman.AI.AStarPacMan;
 import pacman.AI.RLPacMan;
+import pacman.AI.RLPacManV2;
 
 import static pacman.game.Constants.*;
 
@@ -90,21 +91,19 @@ public class Executor {
 
 		// --------------------------------------------------------
 		// PacMan AI RL Runtime
-		RLPacMan rlPacman = new RLPacMan(); // Deel deze instantie!
-		exec.runExperiment(rlPacman, new MyGhosts(), 50000); // increased training games
+		RLPacManV2 rlPacman = new RLPacManV2(); // Deel deze instantie!
+		// exec.runExperiment(new AStarPacMan(), new MyGhosts(), 100); // increased
+		exec.runExperimentRL(rlPacman, new MyGhosts(), 1000); // increased
+		// exec.runGameTimed(rlPacman, new MyGhosts(), visual);
+
+		rlPacman.saveQTable("qtable.csv");
+		// training games
 
 		// for (int i = 0; i < 500; i++) {
-		// exec.runExperiment(rlPacman, new MyGhosts(), 2);
-
-		// if ((i + 1) % 100 == 0) {
-		// rlPacMan.saveQTable(); // Roep rechtstreeks saveQTable() aan
-		// System.out.println("Q-table opgeslagen bij iteratie " + (i + 1));
+		// exec.runGameTimed(rlPacman, new MyGhosts(), visual);
+		// rlPacman.saveQTable("qtable.csv"); // Save Q-table after each game
 		// }
-		// }
-
-		// Na alle iteraties, definitief opslaan
-		rlPacman.saveQTable();
-		System.out.println("Finale Q-table opgeslagen.");
+		// System.out.println("Finale Q-table opgeslagen.");
 		// ---------------------------------------------------------
 		// RunTime against other Ghosts
 		// exec.runGameTimed(new MyPacMan(), new RandomGhosts(), visual); // tegen
@@ -157,13 +156,11 @@ public class Executor {
 	public void runExperiment(Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController,
 			int trials) {
 		double avgScore = 0;
-
-		Game game = new Game(0); // New game per trial
+		Game game = new Game(0);
 		int random = new Random().nextInt();
 
 		for (int i = 0; i < trials; i++) {
-			game = new Game(random); // Reset game for each trial
-
+			game = new Game(random);
 			while (!game.gameOver()) {
 				game.advanceGame(
 						pacManController.getMove(game.copy(), System.currentTimeMillis() + DELAY),
@@ -173,25 +170,48 @@ public class Executor {
 			avgScore += game.getScore();
 			System.out.println("Trial " + (i + 1) + ": Score = " + game.getScore());
 
-			// Save results to CSV after each game
-			onLevelCompletedRL(game, pacManController, ghostController);
+			onLevelCompletedRL(game, pacManController, ghostController); // Keep this
 
-			// Optionally save Q-table periodically
-			if ((i + 1) % 100 == 0 && pacManController instanceof RLPacMan rlPacMan) {
-				rlPacMan.saveQTable();
-				System.out.println("[INFO] Saved Q-table after " + (i + 1) + " trials.");
+			System.out.println("Average score over " + trials + " trials: " + (avgScore / trials));
+
+			// Correct: save Q-table once at the end
+			if (pacManController instanceof RLPacManV2 rl) {
+				rl.saveQTable("qtable.csv");
+				System.out.println("Q-table saved to qtable.csv after all training.");
 			}
 		}
 
-		System.out.println("Average score over " + trials + " trials: " + (avgScore / trials));
+		onLevelCompletedRL(game, pacManController, ghostController);
+	}
 
-		// Final save
-		if (pacManController instanceof RLPacMan rlPacMan) {
-			rlPacMan.saveQTable();
-			System.out.println("[INFO] Final Q-table saved.");
+	public void runExperimentRL(Controller<MOVE> pacManController, Controller<EnumMap<GHOST, MOVE>> ghostController,
+			int trials) {
+		double avgScore = 0;
+		Game game = new Game(0);
+		int random = new Random().nextInt();
+
+		for (int i = 0; i < trials; i++) {
+			game = new Game(random);
+			while (!game.gameOver()) {
+				game.advanceGame(
+						pacManController.getMove(game.copy(), System.currentTimeMillis() + DELAY),
+						ghostController.getMove(game.copy(), System.currentTimeMillis() + DELAY));
+			}
+
+			avgScore += game.getScore();
+			System.out.println("Trial " + (i + 1) + ": Score = " + game.getScore());
+
+			onLevelCompletedRL(game, pacManController, ghostController); // Keep this
+
+			System.out.println("Average score over " + trials + " trials: " + (avgScore / trials));
+
+			// Correct: save Q-table once at the end
+			if (pacManController instanceof RLPacManV2 rl) {
+				rl.saveQTable("qtable.csv");
+				System.out.println("Q-table saved to qtable.csv after all training.");
+			}
 		}
 
-		// Write results to CSV
 		onLevelCompletedRL(game, pacManController, ghostController);
 	}
 
